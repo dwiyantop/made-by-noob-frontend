@@ -1,0 +1,61 @@
+{
+  // Enable format and ESLint fixes for JavaScript
+  "[javascript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  // Enable format and ESLint fixes for JSX
+  "[javascriptreact]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  // Enable format and ESLint fixes for TypeScript
+  "[typescript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  // Enable format and ESLint fixes for TSX
+  "[typescriptreact]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    }
+  },
+  // Enable format for JSONC
+  "[jsonc]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  // Globally enable code action fixes on save
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit"
+  },
+  // Prettier settings for better formatting experience
+  "prettier.arrowParens": "avoid",
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "all",
+  "prettier.tabWidth": 2,
+  "prettier.printWidth": 120,
+  "prettier.endOfLine": "auto",
+  // ESLint integration for better linting
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+  // Disable conflicting formatters for consistent results
+  "editor.defaultFormatter": null,
+  "tailwindCSS.experimental.classRegex": ["i-([a-zA-Z0-9-]+)"],
+  "tailwindCSS.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html",
+    "javascript": "html",
+    "javascriptreact": "html"
+  }
+}

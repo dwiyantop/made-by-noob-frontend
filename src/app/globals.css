@@ -1,0 +1,163 @@
+@import "tailwindcss";
+@plugin "@egoist/tailwindcss-icons";
+
+@theme inline {
+  --font-sans: var(--font-figtree);
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --color-background: #0f172a;
+  --color-card: #1e293b;
+  --color-border: #334155;
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-accent-primary: #00dc82;
+  --color-accent-foreground: #022c1a;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    zoom: 1;
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-text-primary;
+    font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+    zoom: 1;
+    transform: scale(1);
+    transform-origin: top left;
+  }
+}
+
+@keyframes gradient-pan {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@layer utilities {
+  .animate-gradient-pan {
+    animation: gradient-pan 6s linear infinite;
+  }
+
+  .hamburger-bar {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, #00f5a0 0%, #00c4ff 100%);
+    box-shadow: 0 0 8px rgba(0, 228, 170, 0.4);
+    transition: transform 0.3s ease, opacity 0.3s ease, width 0.3s ease;
+  }
+
+  @keyframes hero-float {
+    0% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      transform: translate3d(var(--float-x), var(--float-y), 0) scale(1.05);
+    }
+    100% {
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  @keyframes eye-look {
+    0%,
+    20% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-1.5px);
+    }
+    30%,
+    50% {
+      transform: translateX(-2px);
+    }
+    55% {
+      transform: translateX(-1.5px);
+    }
+    60%,
+    80% {
+      transform: translateX(0);
+    }
+    85% {
+      transform: translateX(1.5px);
+    }
+    90%,
+    95% {
+      transform: translateX(2px);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+
+  .eye-look {
+    animation: eye-look 3s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  .hero-icon {
+    animation: hero-float 12s ease-in-out infinite;
+  }
+
+  .hero-grid {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Crect width='80' height='80' fill='none'/%3E%3Ccircle cx='0' cy='0' r='1.1' fill='%23475569' fill-opacity='0.18'/%3E%3Ccircle cx='40' cy='0' r='1.1' fill='%23475569' fill-opacity='0.18'/%3E%3Ccircle cx='0' cy='40' r='1.1' fill='%23475569' fill-opacity='0.18'/%3E%3Ccircle cx='40' cy='40' r='1.1' fill='%23475569' fill-opacity='0.18'/%3E%3C/svg%3E");
+    background-size: 80px 80px;
+  }
+
+  .hero-glow {
+    width: min(28rem, 70vw);
+    height: min(28rem, 70vw);
+    background: radial-gradient(circle at center, color-mix(in srgb, var(--color-accent-primary) 22%, transparent) 0%, transparent 72%);
+  }
+
+  .section-grid {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='none'/%3E%3Ccircle cx='0' cy='0' r='0.8' fill='%23475569' fill-opacity='0.08'/%3E%3Ccircle cx='50' cy='0' r='0.8' fill='%23475569' fill-opacity='0.08'/%3E%3Ccircle cx='0' cy='50' r='0.8' fill='%23475569' fill-opacity='0.08'/%3E%3Ccircle cx='50' cy='50' r='0.8' fill='%23475569' fill-opacity='0.08'/%3E%3C/svg%3E");
+    background-size: 100px 100px;
+  }
+
+  .section-glow {
+    width: min(20rem, 50vw);
+    height: min(20rem, 50vw);
+    background: radial-gradient(circle at center, color-mix(in srgb, var(--color-accent-primary) 8%, transparent) 0%, transparent 70%);
+  }
+
+  .section-icon {
+    animation: hero-float 15s ease-in-out infinite;
+  }
+
+  @media (min-width: 640px) {
+    .hero-glow {
+      width: 32rem;
+      height: 32rem;
+    }
+
+    .section-glow {
+      width: 24rem;
+      height: 24rem;
+    }
+  }
+}
