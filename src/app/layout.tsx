@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Figtree } from 'next/font/google';
 import { PageBackground } from '@/components/page-background';
 import { PreventZoom } from '@/components/prevent-zoom';
+import { ScrollToTop } from '@/components/scroll-to-top';
 import './globals.css';
 
 const figtree = Figtree({
@@ -60,6 +61,7 @@ export default function RootLayout({
       <body className={`${figtree.variable} antialiased`}>
         <PreventZoom />
         <PageBackground />
+        <ScrollToTop />
         {children}
       </body>
     </html>

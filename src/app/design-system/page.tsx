@@ -1,9 +1,11 @@
 'use client';
 
 import Image from 'next/image';
+import { useState } from 'react';
 
 import { BrandLogo } from '@/components/brand-logo';
 import { Badge } from '@/components/ui/badge';
+import { BottomSheet } from '@/components/ui/bottom-sheet';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Container } from '@/components/ui/container';
@@ -14,6 +16,7 @@ import { Loading } from '@/components/ui/loading';
 import { Paragraph } from '@/components/ui/paragraph';
 
 export default function DesignSystemPage() {
+  const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
   return (
     <main className="py-12">
       <Container className="space-y-12">
@@ -487,6 +490,73 @@ export default function DesignSystemPage() {
               <Button variant="secondary">View Details</Button>
             </CardFooter>
           </Card>
+        </section>
+
+        <section>
+          <Heading variant="h2" className="mt-10">
+            Bottom Sheet
+          </Heading>
+          <div className="mt-4 space-y-6">
+            <div>
+              <Paragraph size="sm" className="mb-3 text-text-secondary">
+                Click the button below to open the bottom sheet. It should slide up from the bottom on mobile devices.
+              </Paragraph>
+              <Button variant="primary" onClick={() => setIsBottomSheetOpen(true)}>
+                Open Bottom Sheet
+              </Button>
+            </div>
+            <div>
+              <Paragraph size="sm" className="mb-3 text-text-secondary">
+                Current state: {isBottomSheetOpen ? 'Open' : 'Closed'}
+              </Paragraph>
+            </div>
+          </div>
+
+          <BottomSheet
+            isOpen={isBottomSheetOpen}
+            onClose={() => setIsBottomSheetOpen(false)}
+            title="Bottom Sheet Example"
+          >
+            <div className="flex h-16 items-center justify-between border-b border-border/40 px-4">
+              <Heading variant="h3">Bottom Sheet Example</Heading>
+              <Button
+                variant="ghost"
+                square
+                onClick={() => setIsBottomSheetOpen(false)}
+                leadingIcon="i-lucide-x"
+                aria-label="Close bottom sheet"
+              />
+            </div>
+            <div className="overflow-y-auto px-4 py-6">
+              <div className="space-y-4">
+                <Paragraph>
+                  This is a bottom sheet component built with Radix UI Dialog. It slides up from the bottom on mobile
+                  devices.
+                </Paragraph>
+                <Paragraph size="sm" className="text-text-secondary">
+                  You can add any content here. The sheet will automatically handle scrolling if the content is too
+                  long.
+                </Paragraph>
+                <div className="space-y-2">
+                  <Button variant="primary" className="w-full">
+                    Primary Action
+                  </Button>
+                  <Button variant="secondary" className="w-full">
+                    Secondary Action
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <Card key={i}>
+                      <CardContent className="py-3">
+                        <Paragraph size="sm">Item {i + 1}</Paragraph>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </BottomSheet>
         </section>
       </Container>
     </main>

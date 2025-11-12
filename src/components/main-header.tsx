@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { BrandLogo } from '@/components/brand-logo';
@@ -15,8 +16,10 @@ const navItems = [
 ] as const;
 
 export function MainHeader() {
+  const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<string | null>(null);
+  const isHomePage = pathname === '/';
 
   useEffect(() => {
     const sections = navItems
@@ -66,16 +69,17 @@ export function MainHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md">
         <Container className="flex h-16 items-center justify-between">
           <BrandLogo />
           <nav className="hidden items-center gap-4 md:flex">
             {navItems.map(item => {
               const isActive = activeItem === item.href;
+              const href = isHomePage ? item.href : `/${item.href}`;
               return (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={href}
                   className={cn(
                     'group inline-flex items-center gap-2 px-0 py-1 text-[15px] font-medium text-text-primary/85 transition-colors no-underline hover:no-underline focus-visible:no-underline hover:text-accent-primary focus-visible:text-accent-primary',
                     isActive && 'text-accent-primary',
@@ -150,10 +154,11 @@ export function MainHeader() {
         <nav className="mt-4 flex flex-col px-4 pb-6">
           {navItems.map(item => {
             const isActive = activeItem === item.href;
+            const href = isHomePage ? item.href : `/home${item.href}`;
             return (
               <Link
                 key={item.href}
-                href={item.href}
+                href={href}
                 className={cn(
                   'flex w-full items-center gap-3 justify-start px-0 py-2 text-base font-medium text-text-primary no-underline hover:text-accent-primary focus-visible:text-accent-primary',
                   isActive && 'text-accent-primary',

@@ -6,7 +6,7 @@ export function PageBackground() {
   return (
     <>
       {/* Floating Icons */}
-      <div className="pointer-events-none fixed inset-0 -z-20">
+      <div className="pointer-events-none fixed top-0 left-0 right-0 h-screen -z-10">
         <span
           className="hero-icon absolute left-[6%] top-[18%] inline-flex h-14 w-14 -rotate-6 items-center justify-center rounded-3xl border border-border/20 bg-card/20 text-3xl text-border/60 shadow-[0_12px_40px_rgba(15,23,42,0.35)] backdrop-blur-sm sm:left-[12%] sm:top-[18%] sm:h-20 sm:w-20 sm:text-4xl"
           style={{ '--float-x': '14px', '--float-y': '16px' } as CSSProperties}
