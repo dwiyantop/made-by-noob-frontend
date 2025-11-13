@@ -6,7 +6,7 @@ import { Chip } from '@/components/ui/chip';
 
 type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent';
 
-interface WikiFiltersContentProps {
+interface GenericFiltersContentProps {
   selectedRarities: Rarity[];
   selectedTypes: string[];
   onRarityChange: (rarities: Rarity[]) => void;
@@ -26,14 +26,14 @@ const allRarities: Rarity[] = [
   'Transcendent',
 ];
 
-export function WikiFiltersContent({
+export function GenericFiltersContent({
   selectedRarities,
   selectedTypes,
   onRarityChange,
   onTypeChange,
   availableTypes,
   onClose,
-}: WikiFiltersContentProps) {
+}: GenericFiltersContentProps) {
   const toggleRarity = (rarity: Rarity) => {
     if (selectedRarities.includes(rarity)) {
       onRarityChange(selectedRarities.filter(r => r !== rarity));

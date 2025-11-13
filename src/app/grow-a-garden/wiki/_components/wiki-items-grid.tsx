@@ -20,9 +20,16 @@ interface WikiItemsGridProps {
   selectedRarities: Rarity[];
   selectedTypes: string[];
   searchQuery: string;
+  hideInfo?: boolean;
 }
 
-export function WikiItemsGrid({ items, selectedRarities, selectedTypes, searchQuery }: WikiItemsGridProps) {
+export function WikiItemsGrid({
+  items,
+  selectedRarities,
+  selectedTypes,
+  searchQuery,
+  hideInfo = false,
+}: WikiItemsGridProps) {
   const filteredItems = items.filter(item => {
     // Search filter
     if (searchQuery) {
@@ -70,6 +77,7 @@ export function WikiItemsGrid({ items, selectedRarities, selectedTypes, searchQu
               info={item.info}
               hatchTime={item.hatchTime}
               petCount={item.petCount}
+              hideInfo={hideInfo}
             />
           ))}
         </div>

@@ -4,18 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import { FiltersSheet } from '@/components/ui/filters-sheet';
-import { WikiFiltersContent } from '@/app/grow-a-garden/wiki/_components/wiki-filters-content';
 import { WikiSearch } from '@/app/grow-a-garden/wiki/_components/wiki-search';
 
 type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent';
 
 interface WikiFiltersBarProps {
   categoryName: string;
-  selectedRarities: Rarity[];
-  selectedTypes: string[];
-  onRarityChange: (rarities: Rarity[]) => void;
-  onTypeChange: (types: string[]) => void;
-  availableTypes: string[];
   onSearchChange: (value: string) => void;
   filterBarRef?: React.RefObject<HTMLDivElement | null>;
   isFiltersOpen?: boolean;
@@ -24,15 +18,12 @@ interface WikiFiltersBarProps {
   onSearchExpandedChange?: (expanded: boolean) => void;
   searchValue?: string;
   onSearchValueChange?: (value: string) => void;
+  filtersContent: React.ReactNode;
+  activeFiltersCount?: number;
 }
 
 export function WikiFiltersBar({
   categoryName,
-  selectedRarities,
-  selectedTypes,
-  onRarityChange,
-  onTypeChange,
-  availableTypes,
   onSearchChange,
   filterBarRef,
   isFiltersOpen: controlledIsFiltersOpen,
@@ -41,6 +32,8 @@ export function WikiFiltersBar({
   onSearchExpandedChange,
   searchValue,
   onSearchValueChange,
+  filtersContent,
+  activeFiltersCount = 0,
 }: WikiFiltersBarProps) {
   const [internalIsFiltersOpen, setInternalIsFiltersOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
@@ -60,7 +53,7 @@ export function WikiFiltersBar({
     return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
-  const hasActiveFilters = selectedRarities.length > 0 || selectedTypes.length > 0;
+  const hasActiveFilters = activeFiltersCount > 0;
 
   return (
     <>
@@ -88,7 +81,7 @@ export function WikiFiltersBar({
               size="xs"
               className="absolute -right-1 -top-1 h-4 min-w-4 flex items-center justify-center px-0.5"
             >
-              {selectedRarities.length + selectedTypes.length}
+              {activeFiltersCount}
             </Badge>
           )}
         </button>
@@ -100,14 +93,7 @@ export function WikiFiltersBar({
         onClose={() => setIsFiltersOpen(false)}
         side={isDesktop ? 'right' : 'bottom'}
       >
-        <WikiFiltersContent
-          selectedRarities={selectedRarities}
-          selectedTypes={selectedTypes}
-          onRarityChange={onRarityChange}
-          onTypeChange={onTypeChange}
-          availableTypes={availableTypes}
-          onClose={() => setIsFiltersOpen(false)}
-        />
+        {filtersContent}
       </FiltersSheet>
     </>
   );

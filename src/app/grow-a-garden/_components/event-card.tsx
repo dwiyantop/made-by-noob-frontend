@@ -40,7 +40,7 @@ export function EventCard({ href, title, description, imageUrl, badge, timeInfo 
         />
         <div className="absolute inset-0 z-20 bg-[linear-gradient(to_top,rgba(0,0,0,1)_0%,rgba(0,0,0,0.85)_30%,rgba(0,0,0,0.6)_60%,transparent_100%)] transition-opacity duration-300" />
         <div className="absolute right-4 top-4 z-30">
-          <Badge variant="subtle" color={badge.color} size="md" className="shadow-lg">
+          <Badge variant="solid" color={badge.color} size="md" className="shadow-lg">
             {badge.label}
           </Badge>
         </div>

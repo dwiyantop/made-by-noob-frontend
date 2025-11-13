@@ -6,7 +6,7 @@ import { Heading } from '@/components/ui/heading';
 import { WikiFiltersBar } from '@/app/grow-a-garden/wiki/_components/wiki-filters-bar';
 import { WikiFloatingFilterButton } from '@/app/grow-a-garden/wiki/_components/wiki-floating-filter-button';
 import { WikiItemsGrid } from '@/app/grow-a-garden/wiki/_components/wiki-items-grid';
-import { GenericFiltersContent } from '@/app/grow-a-garden/wiki/_components/generic-filters-content';
+import { PetsFiltersContent } from '@/app/grow-a-garden/wiki/pets/_components/pets-filters-content';
 import { cn } from '@/lib/utils';
 
 type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent';
@@ -17,18 +17,15 @@ interface WikiItem {
   imageUrl: string;
   rarity?: Rarity;
   info?: string;
-  hatchTime?: string;
-  petCount?: number;
   href: string;
 }
 
-interface CategoryPageClientProps {
-  categoryName: string;
+interface PetsPageClientProps {
   items: WikiItem[];
   availableTypes: string[];
 }
 
-export function CategoryPageClient({ categoryName, items, availableTypes }: CategoryPageClientProps) {
+export function PetsPageClient({ items, availableTypes }: PetsPageClientProps) {
   const [selectedRarities, setSelectedRarities] = useState<Rarity[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,9 +81,9 @@ export function CategoryPageClient({ categoryName, items, availableTypes }: Cate
     <div className="space-y-8">
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-4">
-          <Heading variant="h1">{categoryName}</Heading>
+          <Heading variant="h1">Pets</Heading>
           <WikiFiltersBar
-            categoryName={categoryName}
+            categoryName="Pets"
             onSearchChange={setSearchQuery}
             filterBarRef={filterBarRef}
             isFiltersOpen={isFiltersOpen}
@@ -96,7 +93,7 @@ export function CategoryPageClient({ categoryName, items, availableTypes }: Cate
             searchValue={searchValue}
             onSearchValueChange={setSearchValue}
             filtersContent={
-              <GenericFiltersContent
+              <PetsFiltersContent
                 selectedRarities={selectedRarities}
                 selectedTypes={selectedTypes}
                 onRarityChange={setSelectedRarities}
@@ -125,7 +122,7 @@ export function CategoryPageClient({ categoryName, items, availableTypes }: Cate
               type="text"
               value={searchValue}
               onChange={e => handleSearchChange(e.target.value)}
-              placeholder={`Search ${categoryName.toLowerCase()}...`}
+              placeholder="Search pets..."
               className={cn(
                 'h-10 w-full rounded-lg border border-border/40 bg-card/80 backdrop-blur-sm pl-10 pr-10 text-sm text-text-primary shadow-lg',
                 'placeholder:text-text-secondary',
@@ -151,6 +148,7 @@ export function CategoryPageClient({ categoryName, items, availableTypes }: Cate
         selectedRarities={selectedRarities}
         selectedTypes={selectedTypes}
         searchQuery={searchQuery}
+        hideInfo={true}
       />
 
       <WikiFloatingFilterButton

@@ -17,9 +17,20 @@ interface ItemCardProps {
   hatchTime?: string;
   petCount?: number;
   className?: string;
+  hideInfo?: boolean;
 }
 
-export function ItemCard({ href, name, imageUrl, rarity, info, hatchTime, petCount, className }: ItemCardProps) {
+export function ItemCard({
+  href,
+  name,
+  imageUrl,
+  rarity,
+  info,
+  hatchTime,
+  petCount,
+  className,
+  hideInfo = false,
+}: ItemCardProps) {
   return (
     <Link
       href={href}
@@ -38,7 +49,7 @@ export function ItemCard({ href, name, imageUrl, rarity, info, hatchTime, petCou
           fallbackClassName="bg-card/90"
         />
         <div className="absolute right-2 top-2 z-10 flex items-center gap-1.5">
-          {info && (
+          {info && !hideInfo && (
             <Badge
               variant="soft"
               color="neutral"
