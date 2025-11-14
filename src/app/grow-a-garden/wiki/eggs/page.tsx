@@ -1,89 +1,108 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
 
-import { Container } from '@/components/ui/container';
-import { EggsPageClient } from '@/app/grow-a-garden/wiki/eggs/_components/eggs-page-client';
+import { Container } from "@/components/ui/container";
+import { EggsPageClient } from "@/app/grow-a-garden/wiki/eggs/_components/eggs-page-client";
+import { fetchPetEggs } from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-data";
+import { fetchRarities } from "@/app/grow-a-garden/_repositories/rarities/rarities-data";
+import type {
+  PetEgg,
+  FindAllPetEggsQuery,
+} from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-type";
+import { findAllPetEggsQuerySchema } from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-type";
+import type { Rarity } from "@/app/grow-a-garden/_repositories/rarities/rarities-type";
+import { parseAndValidateQueryParams } from "@/helpers/query-params";
 
 export const metadata: Metadata = {
-  title: 'Grow a Garden Eggs Database | Complete Eggs List | MadeByNoob',
+  title: "Grow a Garden Eggs Database | Complete Eggs List | MadeByNoob",
   description:
-    'Complete database of all Grow a Garden eggs with rarity, hatch times, and pet counts. Find the best eggs to hatch for rare pets.',
+    "Complete database of all Grow a Garden eggs with rarity, hatch times, and pet counts. Find the best eggs to hatch for rare pets.",
   keywords: [
-    'grow a garden eggs',
-    'grow a garden eggs list',
-    'grow a garden eggs database',
-    'grow a garden eggs wiki',
-    'roblox grow a garden eggs',
-    'grow a garden all eggs',
+    "grow a garden eggs",
+    "grow a garden eggs list",
+    "grow a garden eggs database",
+    "grow a garden eggs wiki",
+    "roblox grow a garden eggs",
+    "grow a garden all eggs",
   ],
   openGraph: {
-    title: 'Grow a Garden Eggs Database | MadeByNoob',
+    title: "Grow a Garden Eggs Database | MadeByNoob",
     description:
-      'Complete database of all Grow a Garden eggs with rarity, hatch times, and pet counts. Find the best eggs to hatch for rare pets.',
-    type: 'website',
-    url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://madebynoob.com'}/grow-a-garden/wiki/eggs`,
+      "Complete database of all Grow a Garden eggs with rarity, hatch times, and pet counts. Find the best eggs to hatch for rare pets.",
+    type: "website",
+    url: `${
+      process.env.NEXT_PUBLIC_SITE_URL || "https://madebynoob.com"
+    }/grow-a-garden/wiki/eggs`,
   },
 };
 
-function getCategoryImage(index: number): string {
-  return `https://picsum.photos/400/400?random=egg-${index}`;
+interface EggsPageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-function getCategoryRarity(
-  index: number,
-): 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent' {
-  const rarities: Array<
-    'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent'
-  > = ['Common', 'Uncommon', 'Rare', 'Legendary', 'Mythical', 'Divine', 'Prismatic', 'Transcendent'];
-  return rarities[index % rarities.length];
-}
+const DEFAULT_QUERY: FindAllPetEggsQuery & { page: number; limit: number } = {
+  page: 1,
+  limit: 50,
+  sort: "rarityLevel",
+  order: "asc",
+};
 
-function getCategoryInfo(index: number): string {
-  const types = ['Hatchable', 'Collectible', 'Special'];
-  return types[index % types.length];
-}
+export default async function EggsPage({ searchParams }: EggsPageProps) {
+  const params = await searchParams;
 
-function getHatchTime(index: number): string {
-  const times = [
-    '5 min',
-    '10 min',
-    '15 min',
-    '30 min',
-    '1 hour',
-    '2 hours',
-    '2 hours 30 min',
-    '4 hours',
-    '5 hours 30 min',
-    '8 hours',
-    '12 hours',
-    '1 day',
-  ];
-  return times[index % times.length];
-}
+  // Parse and validate query params from URL
+  // Only requires schema and default query, handles everything else automatically
+  const { queryParams, validatedValues } = parseAndValidateQueryParams(
+    params,
+    findAllPetEggsQuerySchema,
+    DEFAULT_QUERY
+  );
 
-function getPetCount(index: number): number {
-  const counts = [1, 2, 3, 4, 5];
-  return counts[index % counts.length];
-}
+  // Extract validated values (field names match schema)
+  // Transform comma-separated strings to arrays for client component
+  const validatedSearch = (validatedValues.name as string) || "";
+  const validatedRarities =
+    typeof validatedValues.rarityKeys === "string"
+      ? validatedValues.rarityKeys.split(",").filter(Boolean)
+      : [];
+  const validatedTypes =
+    typeof validatedValues.itemTypes === "string"
+      ? validatedValues.itemTypes.split(",").filter(Boolean)
+      : [];
 
-export default async function EggsPage() {
-  // Placeholder data - ~20 eggs
-  const items = Array.from({ length: 20 }, (_, i) => ({
-    id: i + 1,
-    name: `Eggs Item ${i + 1}`,
-    imageUrl: getCategoryImage(i),
-    rarity: getCategoryRarity(i),
-    info: getCategoryInfo(i),
-    hatchTime: getHatchTime(i),
-    petCount: getPetCount(i),
-    href: `/grow-a-garden/wiki/eggs/eggs-item-${i + 1}`,
-  }));
+  let petEggs: PetEgg[] = [];
+  let rarities: Rarity[] = [];
 
-  // Get available types from items
-  const availableTypes = Array.from(new Set(items.map(item => item.info).filter(Boolean) as string[])).sort();
+  try {
+    const [petEggsResponse, raritiesResponse] = await Promise.all([
+      fetchPetEggs(queryParams),
+      fetchRarities({
+        page: 1,
+        limit: 50,
+        sort: "level",
+        order: "asc",
+      }),
+    ]);
+
+    if (petEggsResponse && "data" in petEggsResponse) {
+      petEggs = petEggsResponse.data as PetEgg[];
+    }
+
+    if (raritiesResponse && "data" in raritiesResponse) {
+      rarities = raritiesResponse.data as Rarity[];
+    }
+  } catch (error) {
+    console.error("Failed to fetch eggs page data", error);
+  }
 
   return (
     <Container className="py-12">
-      <EggsPageClient items={items} availableTypes={availableTypes} />
+      <EggsPageClient
+        initialPetEggs={petEggs}
+        initialRarities={rarities}
+        initialSearch={validatedSearch}
+        initialRaritiesFilter={validatedRarities}
+        initialTypesFilter={validatedTypes}
+      />
     </Container>
   );
 }

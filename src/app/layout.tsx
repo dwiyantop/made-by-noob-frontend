@@ -1,18 +1,20 @@
-import type { Metadata, Viewport } from 'next';
-import { Figtree } from 'next/font/google';
-import { PageBackground } from '@/components/page-background';
-import { PreventZoom } from '@/components/prevent-zoom';
-import { ScrollToTop } from '@/components/scroll-to-top';
-import './globals.css';
+import type { Metadata, Viewport } from "next";
+import { Figtree } from "next/font/google";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
+import { PageBackground } from "@/components/page-background";
+import { PreventZoom } from "@/components/prevent-zoom";
+import { ScrollToTop } from "@/components/scroll-to-top";
+import { QueryProvider } from "@/lib/tanstack/query-provider";
+import "./globals.css";
 
 const figtree = Figtree({
-  variable: '--font-figtree',
-  subsets: ['latin'],
-  weight: ['400', '600', '700', '800'],
+  variable: "--font-figtree",
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
 });
 
 export const viewport: Viewport = {
-  width: 'device-width',
+  width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   minimumScale: 1,
@@ -21,22 +23,31 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'MadeByNoob: Fast Game Guides, Tools & Wiki',
-    template: '%s | MadeByNoob',
+    default: "MadeByNoob: Fast Game Guides, Tools & Wiki",
+    template: "%s | MadeByNoob",
   },
   description:
-    'Stop Guessing. Start Mastering. MadeByNoob provides the fast, clean, and accurate game guides you need to win. Level up your play with more than just a wiki.',
-  keywords: ['game guides', 'game wiki', 'roblox guides', 'game tools', 'code tracker', 'game database'],
-  authors: [{ name: 'MadeByNoob' }],
-  creator: 'MadeByNoob',
+    "Stop Guessing. Start Mastering. MadeByNoob provides the fast, clean, and accurate game guides you need to win. Level up your play with more than just a wiki.",
+  keywords: [
+    "game guides",
+    "game wiki",
+    "roblox guides",
+    "game tools",
+    "code tracker",
+    "game database",
+  ],
+  authors: [{ name: "MadeByNoob" }],
+  creator: "MadeByNoob",
   icons: {
-    icon: '/favicon.svg',
+    icon: "/favicon.svg",
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://madebynoob.com'),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://madebynoob.com"
+  ),
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    siteName: 'MadeByNoob',
+    type: "website",
+    locale: "en_US",
+    siteName: "MadeByNoob",
   },
   robots: {
     index: true,
@@ -44,9 +55,9 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
 };
@@ -59,10 +70,14 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className={`${figtree.variable} antialiased`}>
-        <PreventZoom />
-        <PageBackground />
-        <ScrollToTop />
-        {children}
+        <QueryProvider>
+          <NuqsAdapter>
+            <PreventZoom />
+            <PageBackground />
+            <ScrollToTop />
+            {children}
+          </NuqsAdapter>
+        </QueryProvider>
       </body>
     </html>
   );

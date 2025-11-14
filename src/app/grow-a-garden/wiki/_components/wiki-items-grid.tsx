@@ -1,8 +1,16 @@
-'use client';
+"use client";
 
-import { ItemCard } from '@/components/ui/item-card';
+import { ItemCard } from "@/components/ui/item-card";
 
-type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent';
+type Rarity =
+  | "Common"
+  | "Uncommon"
+  | "Rare"
+  | "Legendary"
+  | "Mythical"
+  | "Divine"
+  | "Prismatic"
+  | "Transcendent";
 
 interface WikiItem {
   id: number;
@@ -21,6 +29,8 @@ interface WikiItemsGridProps {
   selectedTypes: string[];
   searchQuery: string;
   hideInfo?: boolean;
+  isLoading?: boolean;
+  imageScale?: number;
 }
 
 export function WikiItemsGrid({
@@ -29,8 +39,25 @@ export function WikiItemsGrid({
   selectedTypes,
   searchQuery,
   hideInfo = false,
+  isLoading = false,
+  imageScale,
 }: WikiItemsGridProps) {
-  const filteredItems = items.filter(item => {
+  const showSkeleton = isLoading && items.length === 0;
+
+  if (showSkeleton) {
+    return (
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div
+            key={`wiki-item-skeleton-${index}`}
+            className="h-52 animate-pulse rounded-2xl border border-border/20 bg-card/30"
+          />
+        ))}
+      </div>
+    );
+  }
+
+  const filteredItems = items.filter((item) => {
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -63,11 +90,13 @@ export function WikiItemsGrid({
       {/* Items Grid */}
       {filteredItems.length === 0 ? (
         <div className="py-12 text-center">
-          <p className="text-text-secondary">No items found matching your search.</p>
+          <p className="text-text-secondary">
+            No items found matching your search.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-          {filteredItems.map(item => (
+          {filteredItems.map((item) => (
             <ItemCard
               key={item.id}
               href={item.href}
@@ -78,6 +107,7 @@ export function WikiItemsGrid({
               hatchTime={item.hatchTime}
               petCount={item.petCount}
               hideInfo={hideInfo}
+              imageScale={imageScale}
             />
           ))}
         </div>

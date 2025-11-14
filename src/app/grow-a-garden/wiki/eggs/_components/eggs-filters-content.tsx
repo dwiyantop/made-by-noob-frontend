@@ -1,30 +1,19 @@
-'use client';
+"use client";
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Chip } from '@/components/ui/chip';
-
-type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 
 interface EggsFiltersContentProps {
-  selectedRarities: Rarity[];
+  selectedRarities: string[];
   selectedTypes: string[];
-  onRarityChange: (rarities: Rarity[]) => void;
+  onRarityChange: (rarities: string[]) => void;
   onTypeChange: (types: string[]) => void;
   availableTypes: string[];
+  availableRarities: string[];
   onClose?: () => void;
+  onClearAll?: () => void;
 }
-
-const allRarities: Rarity[] = [
-  'Common',
-  'Uncommon',
-  'Rare',
-  'Legendary',
-  'Mythical',
-  'Divine',
-  'Prismatic',
-  'Transcendent',
-];
 
 export function EggsFiltersContent({
   selectedRarities,
@@ -32,11 +21,13 @@ export function EggsFiltersContent({
   onRarityChange,
   onTypeChange,
   availableTypes,
+  availableRarities,
   onClose,
+  onClearAll,
 }: EggsFiltersContentProps) {
-  const toggleRarity = (rarity: Rarity) => {
+  const toggleRarity = (rarity: string) => {
     if (selectedRarities.includes(rarity)) {
-      onRarityChange(selectedRarities.filter(r => r !== rarity));
+      onRarityChange(selectedRarities.filter((r) => r !== rarity));
     } else {
       onRarityChange([...selectedRarities, rarity]);
     }
@@ -44,17 +35,23 @@ export function EggsFiltersContent({
 
   const toggleType = (type: string) => {
     if (selectedTypes.includes(type)) {
-      onTypeChange(selectedTypes.filter(t => t !== type));
+      onTypeChange(selectedTypes.filter((t) => t !== type));
     } else {
       onTypeChange([...selectedTypes, type]);
     }
   };
 
-  const hasActiveFilters = selectedRarities.length > 0 || selectedTypes.length > 0;
+  const hasActiveFilters =
+    selectedRarities.length > 0 || selectedTypes.length > 0;
 
   const clearFilters = () => {
-    onRarityChange([]);
-    onTypeChange([]);
+    if (onClearAll) {
+      onClearAll();
+    } else {
+      // Fallback to individual handlers if onClearAll not provided
+      onRarityChange([]);
+      onTypeChange([]);
+    }
   };
 
   return (
@@ -64,12 +61,23 @@ export function EggsFiltersContent({
         <h2 className="text-lg font-semibold text-text-primary">Filters</h2>
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-auto p-0 text-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-auto p-0 text-xs"
+            >
               Clear All
             </Button>
           )}
           {onClose && (
-            <Button variant="ghost" square onClick={onClose} leadingIcon="i-lucide-x" aria-label="Close filters" />
+            <Button
+              variant="ghost"
+              square
+              onClick={onClose}
+              leadingIcon="i-lucide-x"
+              aria-label="Close filters"
+            />
           )}
         </div>
       </div>
@@ -80,7 +88,9 @@ export function EggsFiltersContent({
           {/* Rarity Filter */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-text-primary">Rarity</h3>
+              <h3 className="text-sm font-semibold text-text-primary">
+                Rarity
+              </h3>
               {selectedRarities.length > 0 && (
                 <button
                   type="button"
@@ -92,8 +102,12 @@ export function EggsFiltersContent({
               )}
             </div>
             <div className="flex flex-wrap gap-2">
-              {allRarities.map(rarity => (
-                <Chip key={rarity} onClick={() => toggleRarity(rarity)} selected={selectedRarities.includes(rarity)}>
+              {availableRarities.map((rarity) => (
+                <Chip
+                  key={rarity}
+                  onClick={() => toggleRarity(rarity)}
+                  selected={selectedRarities.includes(rarity)}
+                >
                   {rarity}
                 </Chip>
               ))}
@@ -104,7 +118,9 @@ export function EggsFiltersContent({
           {availableTypes.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-text-primary">Type</h3>
+                <h3 className="text-sm font-semibold text-text-primary">
+                  Type
+                </h3>
                 {selectedTypes.length > 0 && (
                   <button
                     type="button"
@@ -116,8 +132,12 @@ export function EggsFiltersContent({
                 )}
               </div>
               <div className="flex flex-wrap gap-2">
-                {availableTypes.map(type => (
-                  <Chip key={type} onClick={() => toggleType(type)} selected={selectedTypes.includes(type)}>
+                {availableTypes.map((type) => (
+                  <Chip
+                    key={type}
+                    onClick={() => toggleType(type)}
+                    selected={selectedTypes.includes(type)}
+                  >
                     {type}
                   </Chip>
                 ))}
@@ -129,15 +149,27 @@ export function EggsFiltersContent({
           {hasActiveFilters && (
             <div className="pt-4 border-t border-border/40">
               <div className="space-y-2">
-                <p className="text-xs font-medium text-text-secondary">Active Filters</p>
+                <p className="text-xs font-medium text-text-secondary">
+                  Active Filters
+                </p>
                 <div className="flex flex-wrap gap-2">
-                  {selectedRarities.map(rarity => (
-                    <Badge key={rarity} variant="subtle" color="primary" size="sm">
+                  {selectedRarities.map((rarity) => (
+                    <Badge
+                      key={rarity}
+                      variant="subtle"
+                      color="primary"
+                      size="sm"
+                    >
                       {rarity}
                     </Badge>
                   ))}
-                  {selectedTypes.map(type => (
-                    <Badge key={type} variant="subtle" color="neutral" size="sm">
+                  {selectedTypes.map((type) => (
+                    <Badge
+                      key={type}
+                      variant="subtle"
+                      color="neutral"
+                      size="sm"
+                    >
                       {type}
                     </Badge>
                   ))}

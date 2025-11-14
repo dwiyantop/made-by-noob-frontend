@@ -1,83 +1,165 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useQueryStates, parseAsString } from "nuqs";
 
-import { Heading } from '@/components/ui/heading';
-import { WikiFiltersBar } from '@/app/grow-a-garden/wiki/_components/wiki-filters-bar';
-import { WikiFloatingFilterButton } from '@/app/grow-a-garden/wiki/_components/wiki-floating-filter-button';
-import { WikiItemsGrid } from '@/app/grow-a-garden/wiki/_components/wiki-items-grid';
-import { EggsFiltersContent } from '@/app/grow-a-garden/wiki/eggs/_components/eggs-filters-content';
-import { cn } from '@/lib/utils';
-
-type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent';
-
-interface WikiItem {
-  id: number;
-  name: string;
-  imageUrl: string;
-  rarity?: Rarity;
-  info?: string;
-  hatchTime?: string;
-  petCount?: number;
-  href: string;
-}
+import { Heading } from "@/components/ui/heading";
+import { WikiFiltersBar } from "@/app/grow-a-garden/wiki/_components/wiki-filters-bar";
+import { WikiFloatingFilterButton } from "@/app/grow-a-garden/wiki/_components/wiki-floating-filter-button";
+import { WikiExpandedSearchInput } from "@/app/grow-a-garden/wiki/_components/wiki-expanded-search-input";
+import { EggsItemsGrid } from "@/app/grow-a-garden/wiki/eggs/_components/eggs-items-grid";
+import { EggsFiltersContent } from "@/app/grow-a-garden/wiki/eggs/_components/eggs-filters-content";
+import { buildEggList } from "@/app/grow-a-garden/wiki/eggs/_lib/transformers";
+import type { PetEgg } from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-type";
+import { fetchPetEggsClient } from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-data";
+import type { Rarity } from "@/app/grow-a-garden/_repositories/rarities/rarities-type";
 
 interface EggsPageClientProps {
-  items: WikiItem[];
-  availableTypes: string[];
+  initialPetEggs: PetEgg[];
+  initialRarities: Rarity[];
+  initialSearch?: string;
+  initialRaritiesFilter?: string[];
+  initialTypesFilter?: string[];
 }
 
-export function EggsPageClient({ items, availableTypes }: EggsPageClientProps) {
-  const [selectedRarities, setSelectedRarities] = useState<Rarity[]>([]);
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+const DEFAULT_QUERY = {
+  page: 1,
+  limit: 50,
+  sort: "rarityLevel" as const,
+  order: "asc" as const,
+};
+
+export function EggsPageClient({
+  initialPetEggs,
+  initialRarities,
+  initialSearch = "",
+  initialRaritiesFilter = [],
+  initialTypesFilter = [],
+}: EggsPageClientProps) {
+  const [filters, setFilters] = useQueryStates(
+    {
+      name: parseAsString.withDefault(initialSearch),
+      rarityKeys: parseAsString,
+      itemTypes: parseAsString,
+    },
+    {
+      history: "push",
+      shallow: true,
+    }
+  );
+
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
   const filterBarRef = useRef<HTMLDivElement>(null);
-  const expandedInputRef = useRef<HTMLInputElement>(null);
 
+  // Parse comma-separated strings to arrays
+  // Use initial values from SSR if filters are null (not in URL)
+  // Empty string means cleared, return empty array
+  const rarityKeysArray = useMemo(() => {
+    if (filters.rarityKeys === null) return initialRaritiesFilter;
+    if (filters.rarityKeys === "") return [];
+    return filters.rarityKeys.split(",").filter(Boolean);
+  }, [filters.rarityKeys, initialRaritiesFilter]);
+  const itemTypesArray = useMemo(() => {
+    if (filters.itemTypes === null) return initialTypesFilter;
+    if (filters.itemTypes === "") return [];
+    return filters.itemTypes.split(",").filter(Boolean);
+  }, [filters.itemTypes, initialTypesFilter]);
+
+  // Debounced query params for API fetch (state changes immediately for UI)
+  const [debouncedQueryParams, setDebouncedQueryParams] = useState(() => ({
+    ...DEFAULT_QUERY,
+    name: filters.name || undefined,
+    rarityKeys: filters.rarityKeys || undefined,
+    itemTypes: filters.itemTypes || undefined,
+  }));
+
+  // Debounce query params update - only affects API fetch, not UI
   useEffect(() => {
-    if (isSearchExpanded && expandedInputRef.current) {
-      expandedInputRef.current.focus();
-    }
-  }, [isSearchExpanded]);
+    const timer = setTimeout(() => {
+      setDebouncedQueryParams({
+        ...DEFAULT_QUERY,
+        name: filters.name || undefined,
+        rarityKeys: filters.rarityKeys || undefined,
+        itemTypes: filters.itemTypes || undefined,
+      });
+    }, 1000);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        expandedInputRef.current &&
-        !expandedInputRef.current.closest('.search-input-container')?.contains(event.target as Node) &&
-        filterBarRef.current &&
-        !filterBarRef.current.contains(event.target as Node)
-      ) {
-        if (!searchValue) {
-          setIsSearchExpanded(false);
-        }
-      }
-    };
+    return () => clearTimeout(timer);
+  }, [filters.name, filters.rarityKeys, filters.itemTypes]);
 
-    if (isSearchExpanded) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+  // Create stable query key based on debounced params
+  const queryKey = useMemo(() => {
+    const search = debouncedQueryParams.name || "";
+    const rarities = debouncedQueryParams.rarityKeys || "";
+    const types = debouncedQueryParams.itemTypes || "";
+    return ["pet-eggs", search, rarities, types];
+  }, [debouncedQueryParams]);
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isSearchExpanded, searchValue]);
+  const {
+    data: queryData,
+    isFetching,
+    error,
+  } = useQuery<PetEgg[], Error>({
+    queryKey,
+    queryFn: async () => {
+      return await fetchPetEggsClient(debouncedQueryParams);
+    },
+    placeholderData: (previousData) => {
+      // Keep previous data while fetching new data
+      if (previousData) return previousData;
+      // Use initial data only if no filters are applied
+      const hasFilters =
+        debouncedQueryParams.name ||
+        debouncedQueryParams.rarityKeys ||
+        debouncedQueryParams.itemTypes;
+      return hasFilters ? undefined : initialPetEggs;
+    },
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+    retry: 1,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const petEggs = queryData ?? initialPetEggs;
 
   const handleSearchChange = (value: string) => {
-    setSearchValue(value);
-    setSearchQuery(value);
+    setFilters({ name: value });
   };
 
   const handleClear = () => {
-    setSearchValue('');
-    setSearchQuery('');
+    setFilters({ name: "" });
     setIsSearchExpanded(false);
   };
 
-  const activeFiltersCount = selectedRarities.length + selectedTypes.length;
+  const items = useMemo(() => buildEggList(petEggs), [petEggs]);
+
+  // Get available types from initial data (all possible types, not filtered)
+  const availableTypes = useMemo(() => {
+    const initialItems = buildEggList(initialPetEggs);
+    return Array.from(
+      new Set(initialItems.map((item) => item.info).filter(Boolean) as string[])
+    ).sort();
+  }, [initialPetEggs]);
+
+  const availableRarities = useMemo(
+    () =>
+      initialRarities
+        .sort((a, b) => a.level - b.level)
+        .map((rarity) => rarity.name)
+        .filter((name): name is string => Boolean(name)),
+    [initialRarities]
+  );
+
+  const activeFiltersCount = rarityKeysArray.length + itemTypesArray.length;
+
+  useEffect(() => {
+    if (error) {
+      console.error("Failed to fetch pet eggs", error);
+    }
+  }, [error]);
 
   return (
     <div className="space-y-8">
@@ -86,21 +168,41 @@ export function EggsPageClient({ items, availableTypes }: EggsPageClientProps) {
           <Heading variant="h1">Eggs</Heading>
           <WikiFiltersBar
             categoryName="Eggs"
-            onSearchChange={setSearchQuery}
+            onSearchChange={handleSearchChange}
             filterBarRef={filterBarRef}
             isFiltersOpen={isFiltersOpen}
             onFiltersOpenChange={setIsFiltersOpen}
             isSearchExpanded={isSearchExpanded}
             onSearchExpandedChange={setIsSearchExpanded}
-            searchValue={searchValue}
-            onSearchValueChange={setSearchValue}
+            searchValue={filters.name}
+            onSearchValueChange={handleSearchChange}
             filtersContent={
               <EggsFiltersContent
-                selectedRarities={selectedRarities}
-                selectedTypes={selectedTypes}
-                onRarityChange={setSelectedRarities}
-                onTypeChange={setSelectedTypes}
+                selectedRarities={rarityKeysArray}
+                selectedTypes={itemTypesArray}
+                onRarityChange={(rarities) => {
+                  setFilters({
+                    name: filters.name || "",
+                    rarityKeys: rarities.length > 0 ? rarities.join(",") : null,
+                    itemTypes: filters.itemTypes || null,
+                  });
+                }}
+                onTypeChange={(types) => {
+                  setFilters({
+                    name: filters.name || "",
+                    rarityKeys: filters.rarityKeys || null,
+                    itemTypes: types.length > 0 ? types.join(",") : null,
+                  });
+                }}
+                onClearAll={() => {
+                  setFilters({
+                    name: filters.name || "",
+                    rarityKeys: "",
+                    itemTypes: "",
+                  });
+                }}
                 availableTypes={availableTypes}
+                availableRarities={availableRarities}
                 onClose={() => setIsFiltersOpen(false)}
               />
             }
@@ -108,54 +210,22 @@ export function EggsPageClient({ items, availableTypes }: EggsPageClientProps) {
           />
         </div>
         {/* Mobile: Search Input - between header and cards */}
-        <div
-          className={cn(
-            'md:hidden search-input-container',
-            isSearchExpanded ? 'block animate-[slide-in-from-top-2_300ms_ease-out]' : 'hidden',
-          )}
-        >
-          <div className="relative">
-            <span
-              className="i-lucide-search absolute left-3 top-1/2 z-10 flex h-4 w-4 -translate-y-1/2 items-center justify-center text-text-secondary pointer-events-none"
-              aria-hidden
-            />
-            <input
-              ref={expandedInputRef}
-              type="text"
-              value={searchValue}
-              onChange={e => handleSearchChange(e.target.value)}
-              placeholder="Search eggs..."
-              className={cn(
-                'h-10 w-full rounded-lg border border-border/40 bg-card/80 backdrop-blur-sm pl-10 pr-10 text-sm text-text-primary shadow-lg',
-                'placeholder:text-text-secondary',
-                'transition-all focus:border-accent-primary/40 focus:bg-card focus:outline-none focus:ring-0',
-              )}
-            />
-            {searchValue && (
-              <button
-                type="button"
-                onClick={handleClear}
-                className="absolute right-3 top-1/2 flex h-4 w-4 -translate-y-1/2 items-center justify-center text-text-secondary transition-colors hover:text-text-primary"
-                aria-label="Clear search"
-              >
-                <span className="i-lucide-x h-4 w-4" aria-hidden />
-              </button>
-            )}
-          </div>
-        </div>
+        <WikiExpandedSearchInput
+          value={filters.name}
+          onChange={handleSearchChange}
+          onClear={handleClear}
+          isExpanded={isSearchExpanded}
+          onExpandedChange={setIsSearchExpanded}
+          placeholder="Search eggs..."
+          excludeRefs={[filterBarRef]}
+        />
       </div>
 
-      <WikiItemsGrid
-        items={items}
-        selectedRarities={selectedRarities}
-        selectedTypes={selectedTypes}
-        searchQuery={searchQuery}
-        hideInfo={true}
-      />
+      <EggsItemsGrid items={items} isLoading={isFetching} />
 
       <WikiFloatingFilterButton
-        selectedRarities={selectedRarities}
-        selectedTypes={selectedTypes}
+        selectedRarities={rarityKeysArray}
+        selectedTypes={itemTypesArray}
         onOpenFilters={() => setIsFiltersOpen(true)}
         filterBarRef={filterBarRef}
       />
