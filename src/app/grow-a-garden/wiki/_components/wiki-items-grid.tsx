@@ -1,117 +1,52 @@
-"use client";
-
-import { ItemCard } from "@/components/ui/item-card";
-
-type Rarity =
-  | "Common"
-  | "Uncommon"
-  | "Rare"
-  | "Legendary"
-  | "Mythical"
-  | "Divine"
-  | "Prismatic"
-  | "Transcendent";
-
-interface WikiItem {
-  id: number;
-  name: string;
-  imageUrl: string;
-  rarity?: Rarity;
-  info?: string;
-  hatchTime?: string;
-  petCount?: number;
-  href: string;
-}
+import type { ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 interface WikiItemsGridProps {
-  items: WikiItem[];
-  selectedRarities: Rarity[];
-  selectedTypes: string[];
-  searchQuery: string;
-  hideInfo?: boolean;
-  isLoading?: boolean;
-  imageScale?: number;
+  children: ReactNode;
+  isEmpty?: boolean;
+  mobileColumns?: 1 | 2 | 3;
+  desktopColumns?: 2 | 3 | 4 | 5 | 6;
 }
 
-export function WikiItemsGrid({
-  items,
-  selectedRarities,
-  selectedTypes,
-  searchQuery,
-  hideInfo = false,
-  isLoading = false,
-  imageScale,
-}: WikiItemsGridProps) {
-  const showSkeleton = isLoading && items.length === 0;
+const mobileColsClass = {
+  1: "grid-cols-1",
+  2: "grid-cols-2",
+  3: "grid-cols-3",
+} as const;
 
-  if (showSkeleton) {
+const desktopColsClass = {
+  2: "md:grid-cols-2",
+  3: "md:grid-cols-3",
+  4: "md:grid-cols-4",
+  5: "md:grid-cols-5",
+  6: "md:grid-cols-6",
+} as const;
+
+export function WikiItemsGrid({
+  children,
+  isEmpty = false,
+  mobileColumns = 2,
+  desktopColumns = 4,
+}: WikiItemsGridProps) {
+  if (isEmpty) {
     return (
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, index) => (
-          <div
-            key={`wiki-item-skeleton-${index}`}
-            className="h-52 animate-pulse rounded-2xl border border-border/20 bg-card/30"
-          />
-        ))}
+      <div className="py-12 text-center">
+        <p className="text-text-secondary">
+          No items found matching your search.
+        </p>
       </div>
     );
   }
 
-  const filteredItems = items.filter((item) => {
-    // Search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      const matchesSearch =
-        item.name.toLowerCase().includes(query) ||
-        item.rarity?.toLowerCase().includes(query) ||
-        item.info?.toLowerCase().includes(query);
-      if (!matchesSearch) return false;
-    }
-
-    // Rarity filter
-    if (selectedRarities.length > 0) {
-      if (!item.rarity || !selectedRarities.includes(item.rarity)) {
-        return false;
-      }
-    }
-
-    // Type filter
-    if (selectedTypes.length > 0) {
-      if (!item.info || !selectedTypes.includes(item.info)) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-
   return (
-    <>
-      {/* Items Grid */}
-      {filteredItems.length === 0 ? (
-        <div className="py-12 text-center">
-          <p className="text-text-secondary">
-            No items found matching your search.
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-          {filteredItems.map((item) => (
-            <ItemCard
-              key={item.id}
-              href={item.href}
-              name={item.name}
-              imageUrl={item.imageUrl}
-              rarity={item.rarity}
-              info={item.info}
-              hatchTime={item.hatchTime}
-              petCount={item.petCount}
-              hideInfo={hideInfo}
-              imageScale={imageScale}
-            />
-          ))}
-        </div>
+    <div
+      className={cn(
+        "grid gap-4 sm:grid-cols-3",
+        mobileColsClass[mobileColumns],
+        desktopColsClass[desktopColumns]
       )}
-    </>
+    >
+      {children}
+    </div>
   );
 }

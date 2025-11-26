@@ -1,38 +1,40 @@
 import type { ApiResponse, PaginationMeta } from "@/types/global";
 import type {
-  PetEgg,
-  FindAllPetEggsQuery,
-} from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-type";
-import { findAllPetEggsQuerySchema } from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-type";
+  Pet,
+  FindAllPetsQuery,
+} from "@/app/grow-a-garden/_repositories/pet/pets/pets-type";
+import { findAllPetsQuerySchema } from "@/app/grow-a-garden/_repositories/pet/pets/pets-type";
 import { resolveBaseUrl } from "@/helpers/resolve-base-url";
 import { buildSearchParams } from "@/helpers/build-search-params";
 
-export interface EggsResponse {
-  data: PetEgg[];
+export interface PetsResponse {
+  data: Pet[];
   pagination?: PaginationMeta;
 }
 
-export async function fetchPetEggs(
-  params: Partial<FindAllPetEggsQuery> = {},
+export async function fetchPets(
+  params: Partial<FindAllPetsQuery> = {},
   init?: RequestInit
-) {
+): Promise<ApiResponse<Pet[]>> {
   const baseUrl = resolveBaseUrl();
-  const validated = findAllPetEggsQuerySchema.parse(params);
+  const validated = findAllPetsQuerySchema.parse(params);
 
   const searchParams = buildSearchParams({
     page: validated.page,
     limit: validated.limit,
     key: validated.key,
     name: validated.name,
+    description: validated.description,
+    movementType: validated.movementType,
     rarityKeys: validated.rarityKeys,
-    itemTypes: validated.itemTypes,
+    passiveStates: validated.passiveStates,
     sort: validated.sort,
     order: validated.order,
   });
 
   const queryString = searchParams.toString();
   const response = await fetch(
-    `${baseUrl}/api/madebynoob/grow-a-garden/wiki/pet-eggs${
+    `${baseUrl}/api/madebynoob/grow-a-garden/wiki/pets${
       queryString ? `?${queryString}` : ""
     }`,
     {
@@ -42,7 +44,7 @@ export async function fetchPetEggs(
   );
 
   if (!response.ok) {
-    let message = "Failed to fetch pet eggs";
+    let message = "Failed to fetch pets";
     try {
       const errorBody = await response.text();
       message = `${message}: ${errorBody || response.statusText}`;
@@ -53,33 +55,35 @@ export async function fetchPetEggs(
     throw new Error(message);
   }
 
-  const json = (await response.json()) as ApiResponse<PetEgg[]>;
+  const json = await response.json();
   return json;
 }
 
 /**
- * Client-side fetch function for pet eggs.
+ * Client-side fetch function for pets.
  * Fetches directly to API route without using resolveBaseUrl to avoid extra hop.
  */
-export async function fetchPetEggsClient(
-  params: Partial<FindAllPetEggsQuery> = {}
-): Promise<EggsResponse> {
-  const validated = findAllPetEggsQuerySchema.parse(params);
+export async function fetchPetsClient(
+  params: Partial<FindAllPetsQuery> = {}
+): Promise<PetsResponse> {
+  const validated = findAllPetsQuerySchema.parse(params);
 
   const searchParams = buildSearchParams({
     page: validated.page,
     limit: validated.limit,
     key: validated.key,
     name: validated.name,
+    description: validated.description,
+    movementType: validated.movementType,
     rarityKeys: validated.rarityKeys,
-    itemTypes: validated.itemTypes,
+    passiveStates: validated.passiveStates,
     sort: validated.sort,
     order: validated.order,
   });
 
   const queryString = searchParams.toString();
   const response = await fetch(
-    `/api/madebynoob/grow-a-garden/wiki/pet-eggs${
+    `/api/madebynoob/grow-a-garden/wiki/pets${
       queryString ? `?${queryString}` : ""
     }`,
     {
@@ -88,7 +92,7 @@ export async function fetchPetEggsClient(
   );
 
   if (!response.ok) {
-    let message = "Failed to fetch pet eggs";
+    let message = "Failed to fetch pets";
     try {
       const errorBody = await response.text();
       message = `${message}: ${errorBody || response.statusText}`;
@@ -98,11 +102,11 @@ export async function fetchPetEggsClient(
     throw new Error(message);
   }
 
-  const json = (await response.json()) as ApiResponse<PetEgg[]>;
+  const json = (await response.json()) as ApiResponse<Pet[]>;
 
   if ("data" in json) {
     return {
-      data: json.data as PetEgg[],
+      data: json.data as Pet[],
       pagination: json.meta?.pagination,
     };
   }
@@ -114,16 +118,27 @@ export async function fetchPetEggsClient(
 }
 
 /**
- * Fetches a single pet egg by slug (SSR).
- * Returns the egg data or null if not found.
+ * Fetches a single pet by slug.
+ * Returns a single Pet object, not an array.
+ *
+ * @param slug - The slug of the pet to fetch
+ * @param init - Optional fetch init options
+ * @returns Promise resolving to ApiResponse<Pet> (single pet, not array)
  */
-export async function fetchEggBySlug(
+export async function fetchPetBySlug(
   slug: string,
   init?: RequestInit
-): Promise<ApiResponse<PetEgg>> {
+): Promise<ApiResponse<Pet>> {
   const baseUrl = resolveBaseUrl();
+
+  if (!slug || slug.trim() === "") {
+    throw new Error("Pet slug is required");
+  }
+
   const response = await fetch(
-    `${baseUrl}/api/madebynoob/grow-a-garden/wiki/eggs/${slug}`,
+    `${baseUrl}/api/madebynoob/grow-a-garden/wiki/pets/${encodeURIComponent(
+      slug
+    )}`,
     {
       cache: "force-cache",
       ...init,
@@ -131,12 +146,7 @@ export async function fetchEggBySlug(
   );
 
   if (!response.ok) {
-    if (response.status === 404) {
-      const json = (await response.json()) as ApiResponse<PetEgg>;
-      return json;
-    }
-
-    let message = "Failed to fetch pet egg";
+    let message = "Failed to fetch pet";
     try {
       const errorBody = await response.text();
       message = `${message}: ${errorBody || response.statusText}`;
@@ -147,6 +157,6 @@ export async function fetchEggBySlug(
     throw new Error(message);
   }
 
-  const json = (await response.json()) as ApiResponse<PetEgg>;
+  const json = await response.json();
   return json;
 }

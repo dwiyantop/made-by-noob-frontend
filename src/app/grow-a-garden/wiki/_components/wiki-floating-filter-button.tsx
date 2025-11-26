@@ -6,17 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface WikiFloatingFilterButtonProps {
-  selectedRarities: string[];
-  selectedTypes: string[];
-  onOpenFilters: () => void;
+  activeFiltersCount?: number;
   filterBarRef?: React.RefObject<HTMLDivElement | null>;
+  onOpenFilters: () => void;
 }
 
 export function WikiFloatingFilterButton({
-  selectedRarities,
-  selectedTypes,
-  onOpenFilters,
+  activeFiltersCount = 0,
   filterBarRef,
+  onOpenFilters,
 }: WikiFloatingFilterButtonProps) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -41,8 +39,7 @@ export function WikiFloatingFilterButton({
     };
   }, [filterBarRef]);
 
-  const hasActiveFilters =
-    selectedRarities.length > 0 || selectedTypes.length > 0;
+  const hasActiveFilters = activeFiltersCount > 0;
 
   return (
     <button
@@ -65,10 +62,10 @@ export function WikiFloatingFilterButton({
         <Badge
           variant="solid"
           color="primary"
-          size="xs"
+          size="md"
           className="h-5 min-w-5 flex items-center justify-center px-1"
         >
-          {selectedRarities.length + selectedTypes.length}
+          {activeFiltersCount}
         </Badge>
       )}
     </button>

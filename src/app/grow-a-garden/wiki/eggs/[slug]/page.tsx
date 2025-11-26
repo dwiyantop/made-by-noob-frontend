@@ -1,14 +1,17 @@
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
 
-import Link from 'next/link';
-
-import { Container } from '@/components/ui/container';
-import { Heading } from '@/components/ui/heading';
-import { ImageLoader } from '@/components/ui/image-loader';
-import { Paragraph } from '@/components/ui/paragraph';
-import { Breadcrumb } from '@/components/ui/breadcrumb';
-import { Badge } from '@/components/ui/badge';
-import { RarityBadge } from '@/app/grow-a-garden/_components/rarity-badge';
+import { Container } from "@/components/ui/container";
+import { Heading } from "@/components/ui/heading";
+import { ImageLoader } from "@/components/ui/image-loader";
+import { Paragraph } from "@/components/ui/paragraph";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
+import { RarityBadge } from "@/app/grow-a-garden/_components/rarity-badge";
+import { fetchEggBySlug } from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-data";
+import type { PetEgg } from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-type";
+import { formatHatchTime } from "@/helpers/format-hatch-time";
+import { generateEggDescription } from "./_helpers/generate-egg-description";
 
 interface EggDetailPageProps {
   params: Promise<{
@@ -16,144 +19,93 @@ interface EggDetailPageProps {
   }>;
 }
 
-function getEggData(slug: string) {
-  // Extract item number from slug if exists (e.g., "eggs-item-1" -> 1)
-  const match = slug.match(/-item-(\d+)$/);
-  const itemIndex = match ? parseInt(match[1], 10) - 1 : 0;
+/**
+ * Fetches egg data by slug.
+ * Returns null if egg not found.
+ */
+async function getEggData(slug: string): Promise<PetEgg | null> {
+  try {
+    const response = await fetchEggBySlug(slug);
 
-  // Get rarity based on item index
-  const rarities: Array<
-    'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent'
-  > = ['Common', 'Uncommon', 'Rare', 'Legendary', 'Mythical', 'Divine', 'Prismatic', 'Transcendent'];
-  const rarity = rarities[itemIndex % rarities.length];
+    if (response && "data" in response && response.data) {
+      return response.data as PetEgg;
+    }
 
-  // Generate meaningful item name
-  const itemName = `${rarity} Egg`;
-
-  // Get hatch time
-  const hatchTimes = ['5 minutes', '10 minutes', '15 minutes', '30 minutes', '1 hour', '2 hours', '4 hours', '8 hours'];
-  const hatchTime = hatchTimes[itemIndex % hatchTimes.length];
-
-  // Get pet count
-  const petCounts = [1, 2, 3, 4, 5];
-  const petCount = petCounts[itemIndex % petCounts.length];
-
-  // Get egg count
-  const eggCounts = [0, 1, 2, 3];
-  const eggCount = eggCounts[itemIndex % eggCounts.length];
-
-  // Get image
-  const imageUrl = `https://picsum.photos/800/800?random=egg-${itemIndex}`;
-
-  // Get description
-  const description = `A ${rarity.toLowerCase()} egg that can be hatched to obtain pets and eggs. This egg contains unique properties and requires specific conditions to hatch successfully. The hatch time is ${hatchTime} and it contains ${petCount} ${
-    petCount === 1 ? 'pet' : 'pets'
-  }${eggCount > 0 ? ` and ${eggCount} ${eggCount === 1 ? 'egg' : 'eggs'}` : ''}.`;
-
-  // Generate possible pet rewards with percentage
-  // Always generate multiple pet rewards (at least 5-8 pets)
-  const possiblePetRarities: Array<
-    'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent'
-  > = ['Common', 'Uncommon', 'Rare', 'Legendary', 'Mythical', 'Divine', 'Prismatic', 'Transcendent'];
-  const petPercentages = [45, 25, 15, 8, 4, 2, 0.8, 0.2]; // Percentage based on rarity
-  const minPetRewards = 5;
-  const maxPetRewards = 8;
-  const petRewardCount = minPetRewards + (itemIndex % (maxPetRewards - minPetRewards + 1));
-  const petRewards = Array.from({ length: petRewardCount }, (_, i) => {
-    const rarityIndex = (itemIndex + i) % possiblePetRarities.length;
-    const rewardRarity = possiblePetRarities[rarityIndex];
-    const percentage = petPercentages[rarityIndex];
-    const rewardIndex = itemIndex + i + 1;
-    return {
-      name: `${rewardRarity} Pet`,
-      rarity: rewardRarity,
-      imageUrl: `https://picsum.photos/200/200?random=pet-reward-${itemIndex}-${i}`,
-      percentage,
-      type: 'pet' as const,
-      href: `/grow-a-garden/wiki/pets/pets-item-${rewardIndex}`,
-    };
-  });
-
-  // Generate possible egg rewards with percentage
-  // Always generate multiple egg rewards (at least 2-4 eggs)
-  const possibleEggRarities: Array<
-    'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent'
-  > = ['Common', 'Uncommon', 'Rare', 'Legendary', 'Mythical', 'Divine', 'Prismatic', 'Transcendent'];
-  const eggPercentages = [50, 30, 12, 5, 2, 0.8, 0.15, 0.05]; // Percentage based on rarity
-  const minEggRewards = 2;
-  const maxEggRewards = 4;
-  const eggRewardCount = minEggRewards + (itemIndex % (maxEggRewards - minEggRewards + 1));
-  const eggRewards = Array.from({ length: eggRewardCount }, (_, i) => {
-    const rarityIndex = (itemIndex + i + petRewardCount) % possibleEggRarities.length;
-    const rewardRarity = possibleEggRarities[rarityIndex];
-    const percentage = eggPercentages[rarityIndex];
-    const rewardIndex = itemIndex + i + petRewardCount + 1;
-    return {
-      name: `${rewardRarity} Egg`,
-      rarity: rewardRarity,
-      imageUrl: `https://picsum.photos/200/200?random=egg-reward-${itemIndex}-${i}`,
-      percentage,
-      type: 'egg' as const,
-      href: `/grow-a-garden/wiki/eggs/eggs-item-${rewardIndex}`,
-    };
-  });
-
-  return {
-    name: itemName,
-    description,
-    rarity,
-    imageUrl,
-    hatchTime,
-    petCount,
-    eggCount,
-    petRewards,
-    eggRewards,
-  };
+    return null;
+  } catch (error) {
+    console.error("Failed to fetch egg:", error);
+    return null;
+  }
 }
 
-export async function generateStaticParams() {
-  const params: Array<{ slug: string }> = [];
+export async function generateMetadata({
+  params,
+}: EggDetailPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const egg = await getEggData(slug);
 
-  // Generate a few example eggs for SSG
-  for (let i = 1; i <= 3; i++) {
-    params.push({
-      slug: `eggs-item-${i}`,
-    });
+  if (!egg) {
+    return {
+      title: "Egg Not Found - Grow a Garden Eggs",
+    };
   }
 
-  return params;
-}
-
-export async function generateMetadata({ params }: EggDetailPageProps): Promise<Metadata> {
-  const { slug } = await params;
-  const eggData = getEggData(slug);
+  const eggName = egg.name;
+  const description =
+    egg.description ||
+    generateEggDescription(egg) ||
+    `Complete information about ${eggName} in Grow a Garden. Find stats, rarity, hatch time, and rewards.`;
 
   return {
-    title: `${eggData.name} - Grow a Garden Eggs | MadeByNoob`,
-    description: `${eggData.description} Find complete stats, rarity, hatch time, and how to obtain this egg.`,
+    title: `${eggName} - Grow a Garden Eggs`,
+    description: `${description} Find complete stats, rarity, hatch time, and rewards.`,
     keywords: [
       `grow a garden ${slug}`,
-      `grow a garden ${eggData.name.toLowerCase()}`,
-      `grow a garden eggs ${eggData.name.toLowerCase()}`,
-      `roblox grow a garden ${eggData.name.toLowerCase()}`,
+      `grow a garden ${eggName.toLowerCase()}`,
+      `grow a garden eggs ${eggName.toLowerCase()}`,
+      `roblox grow a garden ${eggName.toLowerCase()}`,
     ],
     openGraph: {
-      title: `${eggData.name} - Grow a Garden Eggs | MadeByNoob`,
-      description: eggData.description,
-      type: 'website',
-      url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://madebynoob.com'}/grow-a-garden/wiki/eggs/${slug}`,
+      title: `${eggName} - Grow a Garden Eggs`,
+      description,
+      type: "website",
+      url: `${
+        process.env.NEXT_PUBLIC_SITE_URL || "https://madebynoob.com"
+      }/grow-a-garden/wiki/eggs/${slug}`,
     },
   };
 }
 
 export default async function EggDetailPage({ params }: EggDetailPageProps) {
   const { slug } = await params;
-  const eggData = getEggData(slug);
+  const egg = await getEggData(slug);
+
+  if (!egg) {
+    notFound();
+  }
+
+  const rarityName = egg.rarity?.name;
+  const imageUrl = egg.icon || "";
+  const hatchTimeFormatted = formatHatchTime(egg.hatchTime);
+
+  // Generate description if missing
+  const description = egg.description || generateEggDescription(egg);
+
+  // Calculate pet and egg counts
+  const petItems = egg.items?.filter((item) => item.itemType === "pet") ?? [];
+  const eggItems = egg.items?.filter((item) => item.itemType === "egg") ?? [];
+  const petCount = petItems.length;
+  const eggCount = eggItems.length;
+
+  // Calculate total odds for percentage calculation
+  const allItems = egg.items ?? [];
+  const totalOdds = allItems.reduce((sum, item) => {
+    return sum + (item.normalizeOdds ?? 0);
+  }, 0);
 
   const breadcrumbItems = [
-    { label: 'Wiki', href: '/grow-a-garden' },
-    { label: 'Eggs', href: '/grow-a-garden/wiki/eggs' },
-    { label: eggData.name },
+    { label: "Eggs", href: "/grow-a-garden/wiki/eggs" },
+    { label: egg.name },
   ];
 
   return (
@@ -168,11 +120,11 @@ export default async function EggDetailPage({ params }: EggDetailPageProps) {
           <div className="md:col-span-1">
             <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-card/40">
               <ImageLoader
-                src={eggData.imageUrl}
-                alt={eggData.name}
+                src={imageUrl}
+                alt={egg.name}
                 fill
                 sizes="(min-width: 768px) 33vw, 100vw"
-                className="object-cover"
+                className="object-contain"
                 fallbackClassName="bg-card/90"
               />
             </div>
@@ -182,83 +134,170 @@ export default async function EggDetailPage({ params }: EggDetailPageProps) {
           <div className="md:col-span-2 space-y-6">
             {/* Header */}
             <div className="space-y-4">
-              <Heading variant="h1">{eggData.name}</Heading>
-              <Paragraph size="lg" className="text-text-secondary">
-                {eggData.description}
-              </Paragraph>
+              <div className="flex items-center gap-3">
+                <Heading variant="h1" className="text-2xl md:text-4xl">
+                  {egg.name}
+                </Heading>
+                {rarityName && <RarityBadge rarity={rarityName} size="md" />}
+              </div>
+              {description && (
+                <Paragraph size="lg" className="text-text-secondary">
+                  {description}
+                </Paragraph>
+              )}
             </div>
 
-            {/* Stats Section */}
+            {/* Details Section */}
             <div className="space-y-4">
               <Heading variant="h2" className="text-xl">
-                Stats
+                Details
               </Heading>
-              <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="flex flex-col gap-1">
-                  <dt className="text-sm font-semibold text-text-secondary">Rarity</dt>
-                  <dd>{eggData.rarity && <RarityBadge rarity={eggData.rarity} size="sm" />}</dd>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <dt className="text-sm font-semibold text-text-secondary">Hatch Time</dt>
-                  <dd className="text-sm text-text-primary">{eggData.hatchTime}</dd>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <dt className="text-sm font-semibold text-text-secondary">Pet Count</dt>
-                  <dd className="text-sm text-text-primary">
-                    {eggData.petCount} {eggData.petCount === 1 ? 'pet' : 'pets'}
-                  </dd>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <dt className="text-sm font-semibold text-text-secondary">Egg Count</dt>
-                  <dd className="text-sm text-text-primary">
-                    {eggData.eggCount} {eggData.eggCount === 1 ? 'egg' : 'eggs'}
-                  </dd>
-                </div>
-              </dl>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {hatchTimeFormatted && (
+                  <div className="flex gap-3">
+                    <div className="flex items-center">
+                      <span
+                        className="i-lucide-clock h-4 w-4 shrink-0 text-text-secondary"
+                        aria-hidden
+                      />
+                    </div>
+                    <div className="flex flex-col gap-0.5 flex-1">
+                      <div className="text-sm font-semibold text-text-secondary">
+                        Hatch Time
+                      </div>
+                      <div className="text-sm text-text-primary">
+                        {hatchTimeFormatted}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {petCount > 0 && (
+                  <div className="flex gap-3">
+                    <div className="flex items-center">
+                      <span
+                        className="i-lucide-paw-print h-4 w-4 shrink-0 text-text-secondary"
+                        aria-hidden
+                      />
+                    </div>
+                    <div className="flex flex-col gap-0.5 flex-1">
+                      <div className="text-sm font-semibold text-text-secondary">
+                        Pet Count
+                      </div>
+                      <div className="text-sm text-text-primary">
+                        {petCount} {petCount === 1 ? "pet" : "pets"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {eggCount > 0 && (
+                  <div className="flex gap-3">
+                    <div className="flex items-center">
+                      <span
+                        className="i-lucide-egg h-4 w-4 shrink-0 text-text-secondary"
+                        aria-hidden
+                      />
+                    </div>
+                    <div className="flex flex-col gap-0.5 flex-1">
+                      <div className="text-sm font-semibold text-text-secondary">
+                        Egg Count
+                      </div>
+                      <div className="text-sm text-text-primary">
+                        {eggCount} {eggCount === 1 ? "egg" : "eggs"}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Possible Rewards Section */}
-        {(eggData.petRewards.length > 0 || eggData.eggRewards.length > 0) && (
-          <div className="space-y-6">
-            <Heading variant="h2" className="text-2xl">
+        {/* Possible Rewards Section - Full Width */}
+        {allItems.length > 0 && (
+          <div className="space-y-4">
+            <Heading variant="h2" className="text-xl">
               Possible Rewards
             </Heading>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {[...eggData.petRewards, ...eggData.eggRewards].map((reward, index) => (
-                <Link
-                  key={index}
-                  href={reward.href}
-                  className="group relative block overflow-hidden rounded-2xl border border-border/20 bg-card/40 shadow-lg shadow-black/20 transition-all duration-300 hover:border-border/40"
-                >
-                  <div className="relative aspect-square w-full overflow-hidden">
-                    <ImageLoader
-                      src={reward.imageUrl}
-                      alt={reward.name}
-                      fill
-                      sizes="(min-width: 1024px) 20%, (min-width: 768px) 25%, (min-width: 640px) 33.33%, 50%"
-                      className="object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-105"
-                      fallbackClassName="bg-card/90"
-                    />
-                    {reward.rarity && (
-                      <div className="absolute right-2 top-2 z-10">
-                        <RarityBadge rarity={reward.rarity} size="sm" className="relative z-10" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="relative bg-card/40 p-3 backdrop-blur-sm">
-                    <div className="flex items-center justify-between gap-2">
-                      <Paragraph size="sm" className="font-semibold text-text-primary line-clamp-1 flex-1">
-                        {reward.name}
-                      </Paragraph>
-                      <Badge variant="soft" color="primary" size="md" className="shrink-0">
-                        {reward.percentage < 1 ? reward.percentage.toFixed(2) : reward.percentage.toFixed(1)}%
-                      </Badge>
+              {allItems.map((item) => {
+                const percentage =
+                  totalOdds > 0 && item.normalizeOdds
+                    ? (item.normalizeOdds / totalOdds) * 100
+                    : 0;
+                const itemName = item.name;
+                const itemRarity =
+                  item.pet?.rarity?.name || item.egg?.rarity?.name;
+                const itemImageUrl = item.pet?.icon || item.egg?.icon || "";
+                const itemSlug = item.pet?.slug || item.egg?.slug;
+                const itemHref = itemSlug
+                  ? item.itemType === "pet"
+                    ? `/grow-a-garden/wiki/pets/${itemSlug}`
+                    : `/grow-a-garden/wiki/eggs/${itemSlug}`
+                  : null;
+
+                const cardContent = (
+                  <>
+                    <div className="relative aspect-square w-full overflow-hidden">
+                      <ImageLoader
+                        src={itemImageUrl}
+                        alt={itemName}
+                        fill
+                        sizes="(min-width: 1024px) 20%, (min-width: 768px) 25%, (min-width: 640px) 33.33%, 50%"
+                        className="object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-105"
+                        fallbackClassName="bg-card/90"
+                      />
+                      {itemRarity && (
+                        <div className="absolute right-2 top-2 z-10">
+                          <RarityBadge
+                            rarity={itemRarity}
+                            size="sm"
+                            className="relative z-10"
+                          />
+                        </div>
+                      )}
                     </div>
+                    <div className="relative bg-card/40 p-3 backdrop-blur-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <Paragraph
+                          size="sm"
+                          className="font-semibold text-text-primary line-clamp-1 flex-1"
+                        >
+                          {itemName}
+                        </Paragraph>
+                        {percentage > 0 && (
+                          <span className="inline-flex items-center rounded-full bg-accent-primary/10 px-2 py-0.5 text-xs font-medium text-accent-primary shrink-0">
+                            {percentage < 1
+                              ? percentage.toFixed(2)
+                              : percentage.toFixed(1)}
+                            %
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                );
+
+                if (itemHref) {
+                  return (
+                    <Link
+                      key={item.id}
+                      href={itemHref}
+                      className="group relative block overflow-hidden rounded-2xl border border-border/20 bg-card/40 shadow-lg shadow-black/20 transition-all duration-300 hover:border-border/40"
+                    >
+                      {cardContent}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div
+                    key={item.id}
+                    className="group relative block overflow-hidden rounded-2xl border border-border/20 bg-card/40 shadow-lg shadow-black/20"
+                  >
+                    {cardContent}
                   </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

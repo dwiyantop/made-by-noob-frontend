@@ -8,9 +8,14 @@ const PATH_ALIAS_MAP: Record<string, string> = {
   "grow-a-garden/wiki/pets": "/roblox/grow-a-garden/pet/pets",
   "grow-a-garden/wiki/pet-eggs": "/roblox/grow-a-garden/pet/pet-eggs",
   "grow-a-garden/wiki/pet-passives": "/roblox/grow-a-garden/pet/passives",
+  "grow-a-garden/pet/pet-passives/state-keys":
+    "/roblox/grow-a-garden/pet/pet-passives/state-keys",
 };
 
-const PERMANENT_CACHE_PATHS = new Set(["grow-a-garden/rarities"]);
+const PERMANENT_CACHE_PATHS = new Set([
+  "grow-a-garden/rarities",
+  "grow-a-garden/pet-passives/keys",
+]);
 
 interface RouteParams {
   slug?: string[];
@@ -44,7 +49,21 @@ export async function GET(
   const incomingUrl = new URL(request.url);
   const incomingPath = slug.join("/");
   const isPermanentCache = PERMANENT_CACHE_PATHS.has(incomingPath);
-  const mappedPath = PATH_ALIAS_MAP[incomingPath] ?? `/${incomingPath}`;
+
+  // Handle dynamic pet slug route: grow-a-garden/wiki/pets/{slug} -> /roblox/grow-a-garden/pet/pets/slug/{slug}
+  const petSlugMatch = incomingPath.match(/^grow-a-garden\/wiki\/pets\/(.+)$/);
+  // Handle dynamic egg slug route: grow-a-garden/wiki/eggs/{slug} -> /roblox/grow-a-garden/pet/pet-eggs/slug/{slug}
+  const eggSlugMatch = incomingPath.match(/^grow-a-garden\/wiki\/eggs\/(.+)$/);
+  let mappedPath: string;
+  if (petSlugMatch) {
+    const petSlug = petSlugMatch[1];
+    mappedPath = `/roblox/grow-a-garden/pet/pets/slug/${petSlug}`;
+  } else if (eggSlugMatch) {
+    const eggSlug = eggSlugMatch[1];
+    mappedPath = `/roblox/grow-a-garden/pet/pet-eggs/slug/${eggSlug}`;
+  } else {
+    mappedPath = PATH_ALIAS_MAP[incomingPath] ?? `/${incomingPath}`;
+  }
 
   const upstreamUrl = new URL(mappedPath, API_URL);
 

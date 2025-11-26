@@ -1,12 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
-import { Badge } from '@/components/ui/badge';
-import { FiltersSheet } from '@/components/ui/filters-sheet';
-import { WikiSearch } from '@/app/grow-a-garden/wiki/_components/wiki-search';
-
-type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent';
+import { Badge } from "@/components/ui/badge";
+import { FiltersSheet } from "@/components/ui/filters-sheet";
+import { WikiSearch } from "@/app/grow-a-garden/wiki/_components/wiki-search";
 
 interface WikiFiltersBarProps {
   categoryName: string;
@@ -49,8 +47,8 @@ export function WikiFiltersBar({
       setIsDesktop(window.innerWidth >= 1024);
     };
     checkDesktop();
-    window.addEventListener('resize', checkDesktop);
-    return () => window.removeEventListener('resize', checkDesktop);
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
   }, []);
 
   const hasActiveFilters = activeFiltersCount > 0;
@@ -66,6 +64,7 @@ export function WikiFiltersBar({
           searchValue={searchValue}
           onSearchValueChange={onSearchValueChange}
         />
+
         {/* Filter Button - Icon Only */}
         <button
           type="button"
@@ -78,7 +77,7 @@ export function WikiFiltersBar({
             <Badge
               variant="solid"
               color="primary"
-              size="xs"
+              size="md"
               className="absolute -right-1 -top-1 h-4 min-w-4 flex items-center justify-center px-0.5"
             >
               {activeFiltersCount}
@@ -91,7 +90,7 @@ export function WikiFiltersBar({
       <FiltersSheet
         isOpen={isFiltersOpen}
         onClose={() => setIsFiltersOpen(false)}
-        side={isDesktop ? 'right' : 'bottom'}
+        side={isDesktop ? "right" : "bottom"}
       >
         {filtersContent}
       </FiltersSheet>

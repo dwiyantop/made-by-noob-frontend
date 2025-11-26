@@ -1,26 +1,16 @@
 import type { ApiResponse } from "@/types/global";
-import type {
-  Rarity,
-  FindAllRaritiesQuery,
-} from "@/app/grow-a-garden/_repositories/rarities/rarities-type";
+import type { Rarity } from "@/app/grow-a-garden/_repositories/rarities/rarities-type";
 import { resolveBaseUrl } from "@/helpers/resolve-base-url";
-import { findAllRaritiesQuerySchema } from "@/app/grow-a-garden/_repositories/rarities/rarities-type";
 import { buildSearchParams } from "@/helpers/build-search-params";
 
-export async function fetchRarities(
-  params: Partial<FindAllRaritiesQuery> = {}
-) {
+export async function fetchRarities(): Promise<ApiResponse<Rarity[]>> {
   const baseUrl = resolveBaseUrl();
-  const validated = findAllRaritiesQuerySchema.parse(params);
 
   const searchParams = buildSearchParams({
-    page: validated.page,
-    limit: validated.limit,
-    key: validated.key,
-    name: validated.name,
-    level: validated.level,
-    sort: validated.sort,
-    order: validated.order,
+    page: 1,
+    limit: 50,
+    sort: "level",
+    order: "asc",
   });
 
   const queryString = searchParams.toString();
@@ -45,6 +35,6 @@ export async function fetchRarities(
     throw new Error(message);
   }
 
-  const json = (await response.json()) as ApiResponse<Rarity[]>;
+  const json = await response.json();
   return json;
 }

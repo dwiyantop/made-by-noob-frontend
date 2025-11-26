@@ -2,15 +2,14 @@ import type { z } from "zod";
 
 /**
  * Parse and validate query parameters from URL
- * Only requires schema and default query, handles everything else automatically
+ * Uses Zod schema defaults automatically, no need for separate default query
  * URL searchParams field names must match schema field names
  */
 export function parseAndValidateQueryParams<
   T extends z.ZodObject<z.ZodRawShape>
 >(
   searchParams: { [key: string]: string | string[] | undefined },
-  schema: T,
-  defaultQuery: z.infer<T> & { page: number; limit: number }
+  schema: T
 ): {
   queryParams: z.infer<T> & { page: number; limit: number };
   validatedValues: Record<string, unknown>;
@@ -29,13 +28,12 @@ export function parseAndValidateQueryParams<
   }
 
   // Validate query params using schema (defaults are applied by Zod)
+  // If validation fails, use schema defaults by parsing empty object
   const validatedQuery = schema.safeParse(rawQuery);
-
-  // Use validated query if valid, otherwise use DEFAULT
   const queryParams: z.infer<T> & { page: number; limit: number } =
     validatedQuery.success
       ? (validatedQuery.data as z.infer<T> & { page: number; limit: number })
-      : defaultQuery;
+      : (schema.parse({}) as z.infer<T> & { page: number; limit: number });
 
   // Return validated values as-is (no transformation)
   const validatedValues = validatedQuery.success

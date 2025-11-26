@@ -1,5 +1,7 @@
 import type { PetPassive } from "@/app/grow-a-garden/_repositories/pet/pet-passives/pet-passives-type";
 import type { Rarity } from "@/app/grow-a-garden/_repositories/rarities/rarities-type";
+import { z } from "zod";
+import { parseAsString, parseAsInteger, parseAsStringEnum } from "nuqs/server";
 
 export enum MovementType {
   Grounded = "Grounded",
@@ -157,3 +159,50 @@ export interface Pet {
    */
   deletedAt?: Date | null;
 }
+
+export const petSortFields = [
+  "key",
+  "name",
+  "rarityLevel",
+  "createdAt",
+  "updatedAt",
+  "lastSyncedAt",
+] as const;
+
+export const petOrderFields = ["asc", "desc"] as const;
+
+export const findAllPetsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  key: z.string().optional(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  movementType: z.enum(MovementType).optional(),
+  rarityKeys: z.string().optional(),
+  passiveStates: z.string().optional(),
+  sort: z.enum(petSortFields).default("lastSyncedAt"),
+  order: z.enum(petOrderFields).default("desc"),
+});
+
+export type FindAllPetsQuery = z.infer<typeof findAllPetsQuerySchema>;
+
+/**
+ * nuqs parser descriptor for pets search params.
+ *
+ * Mirrors {@link findAllPetsQuerySchema} exactly, meaning:
+ * - Field names, types, and defaults must stay in sync with the Zod schema.
+ * - Used by both server-side loaders (createLoader) and client-side useQueryStates.
+ * - Any schema change must be reflected here to avoid URL/query mismatches.
+ */
+export const petsSearchParams = {
+  page: parseAsInteger.withDefault(1),
+  limit: parseAsInteger.withDefault(20),
+  key: parseAsString,
+  name: parseAsString.withDefault(""),
+  description: parseAsString,
+  movementType: parseAsStringEnum([MovementType.Grounded, MovementType.Flight]),
+  rarityKeys: parseAsString,
+  passiveStates: parseAsString,
+  sort: parseAsStringEnum([...petSortFields]).withDefault("lastSyncedAt"),
+  order: parseAsStringEnum([...petOrderFields]).withDefault("desc"),
+} as const;
