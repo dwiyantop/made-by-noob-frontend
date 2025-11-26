@@ -1,4 +1,4 @@
-import type { ApiResponse } from "@/types/global";
+import type { ApiResponse, PaginationMeta } from "@/types/global";
 import type {
   PetEgg,
   FindAllPetEggsQuery,
@@ -6,6 +6,11 @@ import type {
 import { findAllPetEggsQuerySchema } from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-type";
 import { resolveBaseUrl } from "@/helpers/resolve-base-url";
 import { buildSearchParams } from "@/helpers/build-search-params";
+
+export interface EggsResponse {
+  data: PetEgg[];
+  pagination?: PaginationMeta;
+}
 
 export async function fetchPetEggs(
   params: Partial<FindAllPetEggsQuery> = {},
@@ -58,7 +63,7 @@ export async function fetchPetEggs(
  */
 export async function fetchPetEggsClient(
   params: Partial<FindAllPetEggsQuery> = {}
-): Promise<PetEgg[]> {
+): Promise<EggsResponse> {
   const validated = findAllPetEggsQuerySchema.parse(params);
 
   const searchParams = buildSearchParams({
@@ -96,7 +101,10 @@ export async function fetchPetEggsClient(
   const json = (await response.json()) as ApiResponse<PetEgg[]>;
 
   if ("data" in json) {
-    return json.data as PetEgg[];
+    return {
+      data: json.data as PetEgg[],
+      pagination: json.meta?.pagination,
+    };
   }
 
   const errorMessage = Array.isArray(json.message)

@@ -1,61 +1,158 @@
-'use client';
+"use client";
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Chip } from '@/components/ui/chip';
-
-type Rarity = 'Common' | 'Uncommon' | 'Rare' | 'Legendary' | 'Mythical' | 'Divine' | 'Prismatic' | 'Transcendent';
+import { memo, useCallback, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Chip } from "@/components/ui/chip";
 
 interface PetsFiltersContentProps {
-  selectedRarities: Rarity[];
-  selectedTypes: string[];
-  onRarityChange: (rarities: Rarity[]) => void;
-  onTypeChange: (types: string[]) => void;
-  availableTypes: string[];
+  availableRarities: string[];
+  availablePassiveStateKeys: string[];
+  selectedRarities: string[];
+  selectedPassiveStateKeys: string[];
+  onRarityChange: (rarities: string[]) => void;
+  onPassiveStateKeyChange: (keys: string[]) => void;
   onClose?: () => void;
+  onClearAll?: () => void;
 }
 
-const allRarities: Rarity[] = [
-  'Common',
-  'Uncommon',
-  'Rare',
-  'Legendary',
-  'Mythical',
-  'Divine',
-  'Prismatic',
-  'Transcendent',
-];
+/**
+ * Filter section component for a single filter type.
+ */
+interface FilterSectionProps {
+  title: string;
+  options: string[];
+  selected: string[];
+  onToggle: (option: string) => void;
+  onClear: () => void;
+}
 
-export function PetsFiltersContent({
+const FilterSection = memo(function FilterSection({
+  title,
+  options,
+  selected,
+  onToggle,
+  onClear,
+}: FilterSectionProps) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
+        {selected.length > 0 && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="text-xs text-text-secondary hover:text-accent-primary"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => (
+          <Chip
+            key={option}
+            onClick={() => onToggle(option)}
+            selected={selected.includes(option)}
+          >
+            {option}
+          </Chip>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+/**
+ * Active filters summary component.
+ */
+interface ActiveFiltersSummaryProps {
+  selectedRarities: string[];
+  selectedPassiveStateKeys: string[];
+}
+
+const ActiveFiltersSummary = memo(function ActiveFiltersSummary({
   selectedRarities,
-  selectedTypes,
+  selectedPassiveStateKeys,
+}: ActiveFiltersSummaryProps) {
+  return (
+    <div className="pt-4 border-t border-border/40">
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-text-secondary">
+          Active Filters
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {selectedRarities.map((rarity) => (
+            <Badge key={rarity} variant="subtle" color="primary" size="sm">
+              {rarity}
+            </Badge>
+          ))}
+          {selectedPassiveStateKeys.map((state) => (
+            <Badge key={state} variant="subtle" color="primary" size="sm">
+              {state}
+            </Badge>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+export const PetsFiltersContent = memo(function PetsFiltersContent({
+  availableRarities,
+  availablePassiveStateKeys,
+  selectedRarities,
+  selectedPassiveStateKeys,
   onRarityChange,
-  onTypeChange,
-  availableTypes,
+  onPassiveStateKeyChange,
   onClose,
+  onClearAll,
 }: PetsFiltersContentProps) {
-  const toggleRarity = (rarity: Rarity) => {
-    if (selectedRarities.includes(rarity)) {
-      onRarityChange(selectedRarities.filter(r => r !== rarity));
-    } else {
-      onRarityChange([...selectedRarities, rarity]);
-    }
-  };
+  const toggleRarity = useCallback(
+    (rarity: string) => {
+      if (selectedRarities.includes(rarity)) {
+        onRarityChange(selectedRarities.filter((r) => r !== rarity));
+      } else {
+        onRarityChange([...selectedRarities, rarity]);
+      }
+    },
+    [selectedRarities, onRarityChange]
+  );
 
-  const toggleType = (type: string) => {
-    if (selectedTypes.includes(type)) {
-      onTypeChange(selectedTypes.filter(t => t !== type));
-    } else {
-      onTypeChange([...selectedTypes, type]);
-    }
-  };
+  const togglePassiveStateKey = useCallback(
+    (key: string) => {
+      if (selectedPassiveStateKeys.includes(key)) {
+        onPassiveStateKeyChange(
+          selectedPassiveStateKeys.filter((s) => s !== key)
+        );
+      } else {
+        onPassiveStateKeyChange([...selectedPassiveStateKeys, key]);
+      }
+    },
+    [selectedPassiveStateKeys, onPassiveStateKeyChange]
+  );
 
-  const hasActiveFilters = selectedRarities.length > 0 || selectedTypes.length > 0;
-
-  const clearFilters = () => {
+  const handleClearRarities = useCallback(() => {
     onRarityChange([]);
-    onTypeChange([]);
-  };
+  }, [onRarityChange]);
+
+  const handleClearPassiveStates = useCallback(() => {
+    onPassiveStateKeyChange([]);
+  }, [onPassiveStateKeyChange]);
+
+  const hasActiveFilters = useMemo(
+    () => selectedRarities.length > 0 || selectedPassiveStateKeys.length > 0,
+    [selectedRarities.length, selectedPassiveStateKeys.length]
+  );
+
+  const clearFilters = useCallback(() => {
+    if (onClearAll) {
+      onClearAll();
+    } else {
+      onRarityChange([]);
+      onPassiveStateKeyChange([]);
+    }
+  }, [onClearAll, onRarityChange, onPassiveStateKeyChange]);
 
   return (
     <div className="flex flex-col">
@@ -64,12 +161,23 @@ export function PetsFiltersContent({
         <h2 className="text-lg font-semibold text-text-primary">Filters</h2>
         <div className="flex items-center gap-2">
           {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-auto p-0 text-xs">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="h-auto p-0 text-xs"
+            >
               Clear All
             </Button>
           )}
           {onClose && (
-            <Button variant="ghost" square onClick={onClose} leadingIcon="i-lucide-x" aria-label="Close filters" />
+            <Button
+              variant="ghost"
+              square
+              onClick={onClose}
+              leadingIcon="i-lucide-x"
+              aria-label="Close filters"
+            />
           )}
         </div>
       </div>
@@ -78,75 +186,34 @@ export function PetsFiltersContent({
       <div className="overflow-y-auto px-4 py-6">
         <div className="space-y-6">
           {/* Rarity Filter */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-text-primary">Rarity</h3>
-              {selectedRarities.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => onRarityChange([])}
-                  className="text-xs text-text-secondary hover:text-accent-primary"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {allRarities.map(rarity => (
-                <Chip key={rarity} onClick={() => toggleRarity(rarity)} selected={selectedRarities.includes(rarity)}>
-                  {rarity}
-                </Chip>
-              ))}
-            </div>
-          </div>
+          <FilterSection
+            title="Rarity"
+            options={availableRarities}
+            selected={selectedRarities}
+            onToggle={toggleRarity}
+            onClear={handleClearRarities}
+          />
 
-          {/* Type Filter */}
-          {availableTypes.length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-text-primary">Type</h3>
-                {selectedTypes.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => onTypeChange([])}
-                    className="text-xs text-text-secondary hover:text-accent-primary"
-                  >
-                    Clear
-                  </button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {availableTypes.map(type => (
-                  <Chip key={type} onClick={() => toggleType(type)} selected={selectedTypes.includes(type)}>
-                    {type}
-                  </Chip>
-                ))}
-              </div>
-            </div>
+          {/* Passive States Filter */}
+          {availablePassiveStateKeys.length > 0 && (
+            <FilterSection
+              title="Passive State"
+              options={availablePassiveStateKeys}
+              selected={selectedPassiveStateKeys}
+              onToggle={togglePassiveStateKey}
+              onClear={handleClearPassiveStates}
+            />
           )}
 
           {/* Active Filters Summary */}
           {hasActiveFilters && (
-            <div className="pt-4 border-t border-border/40">
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-text-secondary">Active Filters</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedRarities.map(rarity => (
-                    <Badge key={rarity} variant="subtle" color="primary" size="sm">
-                      {rarity}
-                    </Badge>
-                  ))}
-                  {selectedTypes.map(type => (
-                    <Badge key={type} variant="subtle" color="neutral" size="sm">
-                      {type}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <ActiveFiltersSummary
+              selectedRarities={selectedRarities}
+              selectedPassiveStateKeys={selectedPassiveStateKeys}
+            />
           )}
         </div>
       </div>
     </div>
   );
-}
+});

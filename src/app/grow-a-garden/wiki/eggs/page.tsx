@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
+import type { SearchParams } from "nuqs/server";
 
 import { Container } from "@/components/ui/container";
 import { EggsPageClient } from "@/app/grow-a-garden/wiki/eggs/_components/eggs-page-client";
-import { fetchPetEggs } from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-data";
-import { fetchRarities } from "@/app/grow-a-garden/_repositories/rarities/rarities-data";
-import type {
-  PetEgg,
-  FindAllPetEggsQuery,
-} from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-type";
 import { findAllPetEggsQuerySchema } from "@/app/grow-a-garden/_repositories/pet/pet-eggs/pet-eggs-type";
-import type { Rarity } from "@/app/grow-a-garden/_repositories/rarities/rarities-type";
 import { parseAndValidateQueryParams } from "@/helpers/query-params";
+import { fetchEggsPageData } from "@/app/grow-a-garden/wiki/eggs/_lib/page-data";
 
 export const metadata: Metadata = {
   title: "Grow a Garden Eggs Database | Complete Eggs List | MadeByNoob",
@@ -36,72 +31,31 @@ export const metadata: Metadata = {
 };
 
 interface EggsPageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<SearchParams>;
 }
-
-const DEFAULT_QUERY: FindAllPetEggsQuery & { page: number; limit: number } = {
-  page: 1,
-  limit: 50,
-  sort: "rarityLevel",
-  order: "asc",
-};
 
 export default async function EggsPage({ searchParams }: EggsPageProps) {
   const params = await searchParams;
 
-  // Parse and validate query params from URL
-  // Only requires schema and default query, handles everything else automatically
-  const { queryParams, validatedValues } = parseAndValidateQueryParams(
+  // Parse and validate URL search params against Zod schema for API fetch.
+  // Schema defaults are applied automatically by Zod.
+  const { queryParams } = parseAndValidateQueryParams(
     params,
-    findAllPetEggsQuerySchema,
-    DEFAULT_QUERY
+    findAllPetEggsQuerySchema
   );
 
-  // Extract validated values (field names match schema)
-  // Transform comma-separated strings to arrays for client component
-  const validatedSearch = (validatedValues.name as string) || "";
-  const validatedRarities =
-    typeof validatedValues.rarityKeys === "string"
-      ? validatedValues.rarityKeys.split(",").filter(Boolean)
-      : [];
-  const validatedTypes =
-    typeof validatedValues.itemTypes === "string"
-      ? validatedValues.itemTypes.split(",").filter(Boolean)
-      : [];
-
-  let petEggs: PetEgg[] = [];
-  let rarities: Rarity[] = [];
-
-  try {
-    const [petEggsResponse, raritiesResponse] = await Promise.all([
-      fetchPetEggs(queryParams),
-      fetchRarities({
-        page: 1,
-        limit: 50,
-        sort: "level",
-        order: "asc",
-      }),
-    ]);
-
-    if (petEggsResponse && "data" in petEggsResponse) {
-      petEggs = petEggsResponse.data as PetEgg[];
-    }
-
-    if (raritiesResponse && "data" in raritiesResponse) {
-      rarities = raritiesResponse.data as Rarity[];
-    }
-  } catch (error) {
-    console.error("Failed to fetch eggs page data", error);
-  }
+  // Fetch initial data for SSR
+  const { eggs, rarityNames, itemTypes, pagination } = await fetchEggsPageData(
+    queryParams
+  );
 
   return (
     <Container className="py-12">
       <EggsPageClient
-        initialPetEggs={petEggs}
-        initialRarities={rarities}
-        initialSearch={validatedSearch}
-        initialRaritiesFilter={validatedRarities}
-        initialTypesFilter={validatedTypes}
+        initialEggs={eggs}
+        initialRarities={rarityNames}
+        initialItemTypes={itemTypes}
+        initialPagination={pagination}
       />
     </Container>
   );
